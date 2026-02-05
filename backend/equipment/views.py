@@ -64,5 +64,31 @@ def history_api(request):
         })
 
     return JsonResponse(data, safe=False)
+from reportlab.pdfgen import canvas
+from django.http import HttpResponse
+
+
+def generate_pdf_report(request):
+    latest = UploadHistory.objects.order_by('-upload_time').first()
+
+    if not latest:
+        return JsonResponse({"error": "No history available"}, status=400)
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="report.pdf"'
+
+    p = canvas.Canvas(response)
+
+    p.drawString(100, 800, "Equipment Data Report")
+    p.drawString(100, 770, f"File Name: {latest.file_name}")
+    p.drawString(100, 740, f"Total Count: {latest.total_count}")
+    p.drawString(100, 710, f"Avg Flowrate: {latest.avg_flowrate}")
+    p.drawString(100, 680, f"Avg Pressure: {latest.avg_pressure}")
+    p.drawString(100, 650, f"Avg Temperature: {latest.avg_temperature}")
+
+    p.showPage()
+    p.save()
+
+    return response
 
 
